@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ToDoList-Android-Client</string>
+
+    <string name="create_new_item_text">Create new item</string>
 </resources>
