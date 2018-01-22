@@ -1,5 +1,6 @@
 package com.client.todolist.anton.todolist_android_client;
 
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,37 +20,63 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
-    private List<ToDoItem> toDoItemsList;
+    private List<ToDoItem> mToDoItemsList;
 
-    private ClientRequestInterface service;
+    private ClientRequestInterface mResponceService;
 
     private RecyclerView mRecyclerView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
+
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        toDoItemsList = new ArrayList<>();
+        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
-        service = getClient().create(ClientRequestInterface.class);
+        mToDoItemsList = new ArrayList<>();
 
-        mRecyclerView = findViewById(R.id.my_recycler_view);
+        mResponceService = getClient().create(ClientRequestInterface.class);
+
+        mRecyclerView = findViewById(R.id.toDoItemsRecyclerView);
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        RecyclerViewClickListener onChekedChangeListener = (compoundButton, b, position) -> {
-            Call<ToDoItem> toDoCall = service.changeToDoItemStatus(position, b);
+        mSwipeRefreshLayout.setOnRefreshListener(getSwipeRefreshLayoutListener());
+
+        mAdapter = new RecyclerViewAdapter(mToDoItemsList, getOnCheckedChangesListener(), getCreateToDoItemListener());
+        mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.getAdapter().notifyDataSetChanged();
+
+        getAllToDoItems();
+    }
+
+    private SwipeRefreshLayout.OnRefreshListener getSwipeRefreshLayoutListener(){
+        SwipeRefreshLayout.OnRefreshListener onRefreshListener = new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                getAllToDoItems();
+            }
+        };
+
+        return onRefreshListener;
+    }
+
+    private RecyclerViewClickListener getOnCheckedChangesListener(){
+        RecyclerViewClickListener onCheckedChangeListener = (compoundButton, b, position) -> {
+            Call<ToDoItem> toDoCall = mResponceService.changeToDoItemStatus(position, b);
             toDoCall.enqueue(new Callback<ToDoItem>() {
                 @Override
                 public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
                     if(response.isSuccessful()){
-                        toDoItemsList.set(position, new ToDoItem(toDoItemsList.get(position).getId(), toDoItemsList.get(position).getText(), b));
+                        mToDoItemsList.set(position, new ToDoItem(mToDoItemsList.get(position).getText(), b));
 
                         mRecyclerView.getAdapter().notifyDataSetChanged();
                     }
+
                 }
 
                 @Override
@@ -60,13 +87,21 @@ public class MainActivity extends AppCompatActivity {
             });
         };
 
+        return onCheckedChangeListener;
+    }
+
+    private View.OnClickListener getCreateToDoItemListener(){
+        String itemText = "Post from android";
+
         View.OnClickListener createToDoItemListener = (View v) ->{
-            Call<ToDoItem> toDoCall = service.postNewToDoItem("Post from android");
+            Call<ToDoItem> toDoCall = mResponceService.postNewToDoItem(itemText);
             toDoCall.enqueue(new Callback<ToDoItem>() {
                 @Override
                 public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
                     if(response.isSuccessful()){
-                        Toast.makeText(getApplicationContext(), "Item added.", Toast.LENGTH_SHORT).show();
+                        mToDoItemsList.add(new ToDoItem(itemText, false));
+
+                        mRecyclerView.getAdapter().notifyDataSetChanged();
                     }
                 }
 
@@ -78,23 +113,21 @@ public class MainActivity extends AppCompatActivity {
             });
         };
 
-        mAdapter = new RecyclerViewAdapter(toDoItemsList, onChekedChangeListener, createToDoItemListener);
-        mRecyclerView.setAdapter(mAdapter);
-        mRecyclerView.getAdapter().notifyDataSetChanged();
+        return createToDoItemListener;
     }
 
-
-
-    public void refreshToDoItems(View view) {
-        Call <List<ToDoItem>> toDoCall = service.getAllToDoItems();
+    private void getAllToDoItems(){
+        Call <List<ToDoItem>> toDoCall = mResponceService.getAllToDoItems();
         toDoCall.enqueue(new Callback<List<ToDoItem>>() {
             @Override
             public void onResponse(Call<List<ToDoItem>> call, Response<List<ToDoItem>> response) {
                 if(response.isSuccessful()){
-                    toDoItemsList.clear();
-                    toDoItemsList.addAll(response.body());
+                    mSwipeRefreshLayout.setRefreshing(false);
 
-                    Toast.makeText(getApplicationContext(), "Successful. List size: " + toDoItemsList.size(), Toast.LENGTH_SHORT).show();
+                    mToDoItemsList.clear();
+                    mToDoItemsList.addAll(response.body());
+
+                    Toast.makeText(getApplicationContext(), "Successful. List size: " + mToDoItemsList.size(), Toast.LENGTH_SHORT).show();
 
                     mRecyclerView.getAdapter().notifyDataSetChanged();
                 }
@@ -102,25 +135,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<ToDoItem>> call, Throwable t) {
+                mSwipeRefreshLayout.setRefreshing(false);
+
                 Toast.makeText(getApplicationContext(), t.toString(), Toast.LENGTH_LONG).show();
-                call.cancel();
-            }
-        });
-    }
-
-    public void postNewToDoItem(View view) {
-        Call<ToDoItem> toDoCall = service.postNewToDoItem("Post from android");
-        toDoCall.enqueue(new Callback<ToDoItem>() {
-            @Override
-            public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
-                if(response.isSuccessful()){
-                    Toast.makeText(getApplicationContext(), "Item added.", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ToDoItem> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), t.toString(), Toast.LENGTH_SHORT).show();
                 call.cancel();
             }
         });

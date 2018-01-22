@@ -4,6 +4,9 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 
 import java.util.List;
 
@@ -63,5 +66,31 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public int getItemCount() {
         return mDataset.size() + 1;
+    }
+}
+
+class RowViewHolder extends RecyclerView.ViewHolder implements CheckBox.OnCheckedChangeListener {
+    public CheckBox mCheckBox;
+    private RecyclerViewClickListener mListener;
+
+    RowViewHolder(View v, RecyclerViewClickListener listener) {
+        super(v);
+        mCheckBox = (CheckBox) v.findViewById(R.id.todo_item_box);
+        mListener = listener;
+        mCheckBox.setOnCheckedChangeListener(this);
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+        mListener.onCheckedChanged(compoundButton, b, getAdapterPosition());
+    }
+}
+
+class HeaderViewHolder extends RecyclerView.ViewHolder {
+    Button mButton;
+
+    public HeaderViewHolder(View itemView) {
+        super(itemView);
+        mButton = (Button) itemView.findViewById(R.id.add_item_button);
     }
 }
