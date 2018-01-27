@@ -1,11 +1,12 @@
 package com.client.todolist.anton.todolist_android_client;
 
+import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
+import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -19,74 +20,61 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity {
-    private List<ToDoItem> mToDoItemsList;
+public class ListActivity extends AppCompatActivity {
 
     public ClientRequestInterface mResponceService;
-
+    private List<ToDoItem> mToDoItemsList;
     private RecyclerView mRecyclerView;
-    private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager mLayoutManager;
-
     private SwipeRefreshLayout mSwipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_list);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(view -> createItem());
 
         mToDoItemsList = new ArrayList<>();
 
         mResponceService = getClient().create(ClientRequestInterface.class);
 
+        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        mSwipeRefreshLayout.setOnRefreshListener(this::updateAllToDoItems);
+
         mRecyclerView = findViewById(R.id.toDoItemsRecyclerView);
-        mLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLayoutManager);
-
-        mSwipeRefreshLayout.setOnRefreshListener(getSwipeRefreshLayoutListener());
-
-//        mAdapter = new RecyclerViewAdapter(this, mToDoItemsList, getCreateToDoItemListener());
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        RecyclerView.Adapter mAdapter = new RecyclerViewAdapter(this, mToDoItemsList);
         mRecyclerView.setAdapter(mAdapter);
-        mRecyclerView.getAdapter().notifyDataSetChanged();
 
-        getAllToDoItems();
+        updateAllToDoItems();
     }
 
-    private SwipeRefreshLayout.OnRefreshListener getSwipeRefreshLayoutListener() {
-        SwipeRefreshLayout.OnRefreshListener onRefreshListener = () -> getAllToDoItems();
-
-        return onRefreshListener;
-    }
-
-    private View.OnClickListener getCreateToDoItemListener() {
+    private void createItem() {
         String itemText = "Post from android";
 
-        View.OnClickListener createToDoItemListener = (View v) -> {
-            String itemText1 = itemText + " " + mToDoItemsList.size();
-            Call<ToDoItem> toDoCall = mResponceService.postNewToDoItem(itemText1);
-            toDoCall.enqueue(new Callback<ToDoItem>() {
-                @Override
-                public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
-                    if (response.isSuccessful()) {
-                        mToDoItemsList.add(new ToDoItem(itemText1, false));
-                        mRecyclerView.getAdapter().notifyItemInserted(mToDoItemsList.size());
-                    }
+        String itemText1 = itemText + " " + mToDoItemsList.size();
+        Call<ToDoItem> toDoCall = mResponceService.postNewToDoItem(itemText1);
+        toDoCall.enqueue(new Callback<ToDoItem>() {
+            @Override
+            public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
+                if (response.isSuccessful()) {
+                    mToDoItemsList.add(new ToDoItem(itemText1, false));
+                    mRecyclerView.getAdapter().notifyItemInserted(mToDoItemsList.size());
                 }
+            }
 
-                @Override
-                public void onFailure(Call<ToDoItem> call, Throwable t) {
-                    Toast.makeText(getApplicationContext(), t.toString(), Toast.LENGTH_SHORT).show();
-                    call.cancel();
-                }
-            });
-        };
-
-        return createToDoItemListener;
+            @Override
+            public void onFailure(Call<ToDoItem> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), t.toString(), Toast.LENGTH_SHORT).show();
+                call.cancel();
+            }
+        });
     }
 
-    private void getAllToDoItems() {
+    private void updateAllToDoItems() {
         Call<List<ToDoItem>> toDoCall = mResponceService.getAllToDoItems();
         toDoCall.enqueue(new Callback<List<ToDoItem>>() {
             @Override
@@ -97,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                     mToDoItemsList.clear();
                     mToDoItemsList.addAll(response.body());
 
-                    Toast.makeText(getApplicationContext(), "Successful. List size: " + mToDoItemsList.size(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ListActivity.this, "Successful. List size: " + mToDoItemsList.size(), Toast.LENGTH_SHORT).show();
 
                     mRecyclerView.getAdapter().notifyDataSetChanged();
                 }
@@ -107,11 +95,12 @@ public class MainActivity extends AppCompatActivity {
             public void onFailure(Call<List<ToDoItem>> call, Throwable t) {
                 mSwipeRefreshLayout.setRefreshing(false);
 
-                Toast.makeText(MainActivity.this, t.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(ListActivity.this, t.toString(), Toast.LENGTH_LONG).show();
                 call.cancel();
             }
         });
     }
+
 
     private Retrofit getClient() {
         Retrofit retrofit;
@@ -121,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
 
         retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.0.11:8080")
+                .baseUrl(BuildConfig.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build();

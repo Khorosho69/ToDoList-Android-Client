@@ -13,7 +13,11 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            buildConfigField 'String', 'BASE_URL', '"http://prod.example.com"'
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            buildConfigField 'String', 'BASE_URL', '"http://192.168.0.11:8080"'
         }
     }
     compileOptions {
@@ -27,7 +31,8 @@ dependencies {
     implementation "com.android.support:appcompat-v7:26.1.0"
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
 
-    compile ('com.squareup.retrofit2:retrofit:2.1.0') {
+    implementation 'com.android.support:design:26.1.0'
+    compile('com.squareup.retrofit2:retrofit:2.1.0') {
         exclude module: 'okhttp'
     }
     compile 'com.google.code.gson:gson:2.8.2'
