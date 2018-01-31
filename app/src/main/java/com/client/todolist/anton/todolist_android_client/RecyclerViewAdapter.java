@@ -38,12 +38,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.mCheckBox.setOnCheckedChangeListener(null);
         holder.mCheckBox.setChecked(toDoItem.isComplete());
         holder.mCheckBox.setOnCheckedChangeListener((compoundButton, b) -> {
-            Call<ToDoItem> toDoCall = ((ListActivity) activity).mResponseService.changeToDoItemStatus(holder.getAdapterPosition(), b);
+          Call<ToDoItem> toDoCall = ((ListActivity) activity).mResponseService.updateToDoItem(holder.getAdapterPosition(),
+                  new ToDoItem(mDataset.get(holder.getAdapterPosition()).getText(), b));
             toDoCall.enqueue(new Callback<ToDoItem>() {
                 @Override
                 public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
                     if (response.isSuccessful()) {
-                        mDataset.set(position, new ToDoItem(mDataset.get(position).getText(), b));
+                        mDataset.set(position, response.body());
                         notifyItemChanged(position);
                     }
                 }

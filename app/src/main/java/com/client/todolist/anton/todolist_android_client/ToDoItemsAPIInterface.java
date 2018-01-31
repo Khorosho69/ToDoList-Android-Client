@@ -3,11 +3,13 @@ package com.client.todolist.anton.todolist_android_client;
 import java.util.List;
 
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
+import retrofit2.http.Path;
 
 public interface ToDoItemsAPIInterface {
     @GET("/toDoItems")
@@ -17,7 +19,7 @@ public interface ToDoItemsAPIInterface {
     @POST("/toDoItems?")
     Call<ToDoItem> postNewToDoItem(@Field("itemText") String itemText);
 
-    @FormUrlEncoded
-    @PUT("/toDoItems?")
-    Call<ToDoItem> changeToDoItemStatus(@Field("id") Integer id, @Field("status") Boolean status);
+    @PUT("/toDoItems/{id}")
+    Call<ToDoItem> updateToDoItem(@Path("id") int id, @Body ToDoItem body);
+
 }
