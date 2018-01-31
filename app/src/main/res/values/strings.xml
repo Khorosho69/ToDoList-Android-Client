@@ -3,4 +3,6 @@
 
     <string name="create_new_item_text">Create new item</string>
     <string name="title_activity_list">ListActivity</string>
+    <string name="add_new_item_header_text">Add item</string>
+    <string name="add_new_todo_item_hint">Add new ToDo item</string>
 </resources>

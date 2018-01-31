@@ -1,5 +1,6 @@
 package com.client.todolist.anton.todolist_android_client;
 
+import android.app.DialogFragment;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -12,17 +13,13 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
-public class ListActivity extends AppCompatActivity {
+public class ListActivity extends AppCompatActivity implements CreateItemDialog.NoticeDialogListener{
 
-    public ClientRequestInterface mResponceService;
+    public ToDoItemsAPIInterface mResponseService;
     private List<ToDoItem> mToDoItemsList;
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
@@ -35,11 +32,11 @@ public class ListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(view -> createItem());
+        fab.setOnClickListener(view -> showNoticeDialog());
 
         mToDoItemsList = new ArrayList<>();
 
-        mResponceService = getClient().create(ClientRequestInterface.class);
+        mResponseService = ServiceGenerator.getClient().create(ToDoItemsAPIInterface.class);
 
         mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(this::updateAllToDoItems);
@@ -52,16 +49,24 @@ public class ListActivity extends AppCompatActivity {
         updateAllToDoItems();
     }
 
-    private void createItem() {
-        String itemText = "Post from android";
+    public void showNoticeDialog() {
+        DialogFragment dialog = new CreateItemDialog();
+        dialog.show(getFragmentManager(), "add_item");
+    }
 
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog, String itemText) {
+        createItem(itemText);
+    }
+
+    public void createItem(String itemText) {
         String itemText1 = itemText + " " + mToDoItemsList.size();
-        Call<ToDoItem> toDoCall = mResponceService.postNewToDoItem(itemText1);
+        Call<ToDoItem> toDoCall = mResponseService.postNewToDoItem(itemText1);
         toDoCall.enqueue(new Callback<ToDoItem>() {
             @Override
             public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
                 if (response.isSuccessful()) {
-                    mToDoItemsList.add(new ToDoItem(itemText1, false));
+                    mToDoItemsList.add(response.body());
                     mRecyclerView.getAdapter().notifyItemInserted(mToDoItemsList.size());
                 }
             }
@@ -75,7 +80,7 @@ public class ListActivity extends AppCompatActivity {
     }
 
     private void updateAllToDoItems() {
-        Call<List<ToDoItem>> toDoCall = mResponceService.getAllToDoItems();
+        Call<List<ToDoItem>> toDoCall = mResponseService.getAllToDoItems();
         toDoCall.enqueue(new Callback<List<ToDoItem>>() {
             @Override
             public void onResponse(Call<List<ToDoItem>> call, Response<List<ToDoItem>> response) {
@@ -85,7 +90,7 @@ public class ListActivity extends AppCompatActivity {
                     mToDoItemsList.clear();
                     mToDoItemsList.addAll(response.body());
 
-                    Toast.makeText(ListActivity.this, "Successful. List size: " + mToDoItemsList.size(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ListActivity.this, "Successful.", Toast.LENGTH_SHORT).show();
 
                     mRecyclerView.getAdapter().notifyDataSetChanged();
                 }
@@ -99,22 +104,5 @@ public class ListActivity extends AppCompatActivity {
                 call.cancel();
             }
         });
-    }
-
-
-    private Retrofit getClient() {
-        Retrofit retrofit;
-
-        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-        interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-        OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
-
-        retrofit = new Retrofit.Builder()
-                .baseUrl(BuildConfig.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .client(client)
-                .build();
-
-        return retrofit;
     }
 }

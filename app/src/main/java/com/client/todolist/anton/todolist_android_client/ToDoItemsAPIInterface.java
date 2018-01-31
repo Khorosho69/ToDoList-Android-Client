@@ -9,7 +9,7 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 
-public interface ClientRequestInterface {
+public interface ToDoItemsAPIInterface {
     @GET("/toDoItems")
     Call<List<ToDoItem>> getAllToDoItems();
 

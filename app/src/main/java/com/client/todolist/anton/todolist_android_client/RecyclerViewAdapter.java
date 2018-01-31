@@ -33,13 +33,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public void onBindViewHolder(RecyclerViewAdapter.RowViewHolder holder, int position) {
-
         ToDoItem toDoItem = mDataset.get(position);
         holder.mCheckBox.setText(toDoItem.getText());
         holder.mCheckBox.setOnCheckedChangeListener(null);
         holder.mCheckBox.setChecked(toDoItem.isComplete());
         holder.mCheckBox.setOnCheckedChangeListener((compoundButton, b) -> {
-            Call<ToDoItem> toDoCall = ((MainActivity) activity).mResponceService.changeToDoItemStatus(holder.getAdapterPosition(), b);
+            Call<ToDoItem> toDoCall = ((ListActivity) activity).mResponseService.changeToDoItemStatus(holder.getAdapterPosition(), b);
             toDoCall.enqueue(new Callback<ToDoItem>() {
                 @Override
                 public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
