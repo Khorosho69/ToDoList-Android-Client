@@ -12,6 +12,6 @@
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         android:inputType="textPersonName"
-        android:hint="@string/add_new_todo_item_hint"
+        android:hint="@string/create_dialog_item_hint"
         android:text=""/>
 </LinearLayout>

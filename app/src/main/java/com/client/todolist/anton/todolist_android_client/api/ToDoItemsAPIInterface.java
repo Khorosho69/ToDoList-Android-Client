@@ -1,4 +1,6 @@
-package com.client.todolist.anton.todolist_android_client;
+package com.client.todolist.anton.todolist_android_client.api;
+
+import com.client.todolist.anton.todolist_android_client.api.models.ToDoItem;
 
 import java.util.List;
 

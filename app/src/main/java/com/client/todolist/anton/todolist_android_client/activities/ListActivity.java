@@ -1,4 +1,4 @@
-package com.client.todolist.anton.todolist_android_client;
+package com.client.todolist.anton.todolist_android_client.activities;
 
 import android.app.DialogFragment;
 import android.os.Bundle;
@@ -10,6 +10,13 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
 
+import com.client.todolist.anton.todolist_android_client.R;
+import com.client.todolist.anton.todolist_android_client.adapters.RecyclerViewAdapter;
+import com.client.todolist.anton.todolist_android_client.api.ServiceGenerator;
+import com.client.todolist.anton.todolist_android_client.api.ToDoItemsAPIInterface;
+import com.client.todolist.anton.todolist_android_client.api.models.ToDoItem;
+import com.client.todolist.anton.todolist_android_client.fragments.CreateItemDialog;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +24,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class ListActivity extends AppCompatActivity implements CreateItemDialog.NoticeDialogListener{
+public class ListActivity extends AppCompatActivity implements CreateItemDialog.NoticeDialogListener {
 
     public ToDoItemsAPIInterface mResponseService;
     private List<ToDoItem> mToDoItemsList;
@@ -50,33 +57,13 @@ public class ListActivity extends AppCompatActivity implements CreateItemDialog.
     }
 
     public void showNoticeDialog() {
-        DialogFragment dialog = new CreateItemDialog();
+        DialogFragment dialog = CreateItemDialog.newInstance(CreateItemDialog.EditMode.CREATE, "", 0);
         dialog.show(getFragmentManager(), "add_item");
     }
 
-    @Override
-    public void onDialogPositiveClick(DialogFragment dialog, String itemText) {
-        createItem(itemText);
-    }
-
-    public void createItem(String itemText) {
-        String itemText1 = itemText + " " + mToDoItemsList.size();
-        Call<ToDoItem> toDoCall = mResponseService.postNewToDoItem(itemText1);
-        toDoCall.enqueue(new Callback<ToDoItem>() {
-            @Override
-            public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
-                if (response.isSuccessful()) {
-                    mToDoItemsList.add(response.body());
-                    mRecyclerView.getAdapter().notifyItemInserted(mToDoItemsList.size());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ToDoItem> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), t.toString(), Toast.LENGTH_SHORT).show();
-                call.cancel();
-            }
-        });
+    public void showEditDialog(String itemText, int itemId) {
+        DialogFragment dialog = CreateItemDialog.newInstance(CreateItemDialog.EditMode.EDIT, itemText, itemId);
+        dialog.show(getFragmentManager(), "edit_item");
     }
 
     private void updateAllToDoItems() {
@@ -102,6 +89,46 @@ public class ListActivity extends AppCompatActivity implements CreateItemDialog.
 
                 Toast.makeText(ListActivity.this, t.toString(), Toast.LENGTH_LONG).show();
                 call.cancel();
+            }
+        });
+    }
+
+    @Override
+    public void onCreateItem(String itemText) {
+        Call<ToDoItem> toDoCall = mResponseService.postNewToDoItem(itemText);
+        toDoCall.enqueue(new Callback<ToDoItem>() {
+            @Override
+            public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
+                if (response.isSuccessful()) {
+                    mToDoItemsList.add(response.body());
+                    mRecyclerView.getAdapter().notifyItemInserted(mToDoItemsList.size());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ToDoItem> call, Throwable t) {
+                Toast.makeText(ListActivity.this, t.toString(), Toast.LENGTH_SHORT).show();
+                call.cancel();
+            }
+        });
+    }
+
+    @Override
+    public void onEditItem(int elementId, String itemText) {
+        Call<ToDoItem> toDoCall = mResponseService.updateToDoItem(elementId,
+                new ToDoItem(itemText, mToDoItemsList.get(elementId).isComplete()));
+        toDoCall.enqueue(new Callback<ToDoItem>() {
+            @Override
+            public void onResponse(Call<ToDoItem> call, Response<ToDoItem> response) {
+                if (response.isSuccessful()) {
+                    mToDoItemsList.set(elementId, response.body());
+                    mRecyclerView.getAdapter().notifyItemChanged(elementId);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ToDoItem> call, Throwable t) {
+                Toast.makeText(ListActivity.this, t.toString(), Toast.LENGTH_LONG).show();
             }
         });
     }

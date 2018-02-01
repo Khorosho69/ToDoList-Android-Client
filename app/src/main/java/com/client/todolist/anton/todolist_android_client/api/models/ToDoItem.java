@@ -1,10 +1,11 @@
-package com.client.todolist.anton.todolist_android_client;
+package com.client.todolist.anton.todolist_android_client.api.models;
 
 import com.google.gson.annotations.SerializedName;
 
 public class ToDoItem {
-    @SerializedName("text")
+
     private String text;
+
     @SerializedName("complete")
     private boolean isComplete;
 
@@ -17,7 +18,15 @@ public class ToDoItem {
         return text;
     }
 
+    public void setText(String text) {
+        this.text = text;
+    }
+
     public boolean isComplete() {
         return isComplete;
+    }
+
+    public void setComplete(boolean complete) {
+        isComplete = complete;
     }
 }

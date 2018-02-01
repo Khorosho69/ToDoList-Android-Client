@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.client.todolist.anton.todolist_android_client.ListActivity"
+    tools:context="com.client.todolist.anton.todolist_android_client.activities.ListActivity"
     tools:showIn="@layout/activity_list">
 
     <android.support.v4.widget.SwipeRefreshLayout
